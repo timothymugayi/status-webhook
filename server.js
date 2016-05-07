@@ -4,7 +4,8 @@ var express = require('express'),
     Status = require('./models/status'),
     HttpStatus = require('http-status-codes'),
     morgan = require('morgan'),
-    basicAuth = require('basic-auth');
+    basicAuth = require('basic-auth'),
+    cors = require('cors');
 
 mongoose.connect(process.env.MONGOLAB_URI, function(error) {
     if (error) console.error(error);
@@ -44,6 +45,7 @@ var isAuthenticated = function(req, res, next) {
 express()
     .use(bodyParser.json())
     .use(bodyParser.urlencoded({ extended: true }))
+    .use(cors())
     .use(morgan('combined'))
     .use(express.static(__dirname + '/public'))
     .set('view engine', 'ejs')
