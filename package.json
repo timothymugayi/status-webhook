@@ -1,8 +1,10 @@
 {
   "private": true,
   "dependencies": {
+    "basic-auth": "^1.0.3",
     "body-parser": "^1.15.1",
     "cors": "^2.7.1",
+    "ejs": "^2.4.1",
     "express": "^4.13.4",
     "http-status-codes": "^1.0.6",
     "mongoose": "^4.4.14",

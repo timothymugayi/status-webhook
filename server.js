@@ -10,15 +10,30 @@ mongoose.connect(process.env.MONGOLAB_URI, function(error) {
     else console.log('mongo connected');
 });
 
+function paginationFilter(req) {
+    var perPage = parseInt(req.query.limit > 0 ? Math.min(req.query.limit, 100) : 10),
+        page = parseInt(req.query.page > 0 ? req.query.page : 1);
+    return {
+        page: page,
+        sort: { createdAt: -1 },
+        limit: perPage
+    };
+}
+
 express()
     .use(bodyParser.json())
     .use(bodyParser.urlencoded({ extended: true }))
     .use(morgan('combined'))
+    .use(express.static(__dirname + '/public'))
+    .set('view engine', 'ejs')
+    .get('/', function(req, res) {
+        res.render('index');
+    })
     .get('/api/v1', function(req, res) {
         res.status(HttpStatus.OK).json({ msg: 'OK', service: "status webhook" })
     })
     .get('/api/v1/status', function(req, res) {
-        Status.paginate({}, { sort: { createdAt: -1 } }, function(err, result) {
+        Status.paginate({}, paginationFilter(req), function(err, result) {
             if (err) return res.json(HttpStatus.INTERNAL_SERVER_ERROR, err);
             if (result.docs.length == 0)
                 return res.status(HttpStatus.NOT_FOUND).json({ detail: 'no records found' });
