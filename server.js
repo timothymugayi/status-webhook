@@ -3,7 +3,8 @@ var express = require('express'),
     bodyParser = require('body-parser'),
     Status = require('./models/status'),
     HttpStatus = require('http-status-codes'),
-    morgan = require('morgan');
+    morgan = require('morgan'),
+    basicAuth = require('basic-auth');
 
 mongoose.connect(process.env.MONGOLAB_URI, function(error) {
     if (error) console.error(error);
@@ -20,6 +21,26 @@ function paginationFilter(req) {
     };
 }
 
+
+var isAuthenticated = function(req, res, next) {
+    function unauthorized(res) {
+        res.set('WWW-Authenticate', 'Basic realm=Authorization Required');
+        return res.send(HttpStatus.UNAUTHORIZED);
+    };
+
+    var user = basicAuth(req);
+
+    if (!user || !user.name || !user.pass) {
+        return unauthorized(res);
+    };
+
+    if (user.name === process.env.USERNAME && user.pass === process.env.PASSWORD) {
+        return next();
+    } else {
+        return unauthorized(res);
+    };
+};
+
 express()
     .use(bodyParser.json())
     .use(bodyParser.urlencoded({ extended: true }))
@@ -32,7 +53,7 @@ express()
     .get('/api/v1', function(req, res) {
         res.status(HttpStatus.OK).json({ msg: 'OK', service: "status webhook" })
     })
-    .get('/api/v1/status', function(req, res) {
+    .get('/api/v1/status', isAuthenticated, function(req, res) {
         Status.paginate({}, paginationFilter(req), function(err, result) {
             if (err) return res.json(HttpStatus.INTERNAL_SERVER_ERROR, err);
             if (result.docs.length == 0)
@@ -40,7 +61,7 @@ express()
             res.json(HttpStatus.OK, result);
         });
     })
-    .post('/api/v1/status', function(req, res) {
+    .post('/api/v1/status', isAuthenticated, function(req, res) {
         var status = new Status(req.body);
         status.save(function(err, createdStatus) {
             if (err) return res.json(HttpStatus.INTERNAL_SERVER_ERROR, err);
